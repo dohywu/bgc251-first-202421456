@@ -11,32 +11,32 @@ let smokeParticles = [];
 
 window.setup = function () {
   createCanvas(windowWidth, windowHeight);
+
+  // 비디오 스트림 및 FaceAPI 초기화
+  video = createCapture(VIDEO);
+  video.size(240, 180);
+  video.hide();
+
+  const options = {
+    withLandmarks: true,
+    withDescriptors: false,
+    withExpressions: false,
+  };
+  faceapi = ml5.faceApi(video, options, () => {
+    console.log('FaceAPI ready');
+    getFace();
+  });
+
   messageElement = document.getElementById('message');
   inputDiv = document.getElementById('wish-input');
   resetButton = document.getElementById('reset-button');
 };
 
 window.startCandle = function () {
-  // 소원 가져오기
+  // 소원 가져오기 및 촛불 On
   wishText = document.getElementById('wish').value || '소중한 순간';
   inputDiv.style.display = 'none';
   flameOn = true;
-
-  // video는 여기서만 한 번 생성
-  video = createCapture(VIDEO, () => {
-    video.size(240, 180);
-    video.hide();
-
-    const options = {
-      withLandmarks: true,
-      withDescriptors: false,
-      withExpressions: false,
-    };
-    faceapi = ml5.faceApi(video, options, () => {
-      console.log('FaceAPI ready');
-      getFace();
-    });
-  });
 };
 
 function getFace() {
@@ -50,23 +50,23 @@ function getFace() {
 window.draw = function () {
   background('#ffeef4');
 
-  // 웹캠 출력
+  // 비디오 창 크기 및 위치
   const vidW = 240,
     vidH = 180;
   const vidX = width / 2 - vidW / 2;
   const vidY = height / 2 - 60 - vidH;
+
+  // 영상 출력 (좌우 반전)
   if (video && video.loadedmetadata) {
     push();
     translate(vidX + vidW, vidY);
-    scale(-1, 1); // 좌우 반전
+    scale(-1, 1);
     image(video, 0, 0, vidW, vidH);
     pop();
   }
 
-  // 모자→촛불→입벌림감지 순서
+  // 모자 → 입 벌림 감지 순서
   drawBirthdayHat(vidX, vidY, vidW, vidH);
-
-  // 입 벌리면 즉시 flameOn 끔
   if (flameOn && mouthOpen()) {
     console.log('입 벌림 감지됨 — 촛불 끔');
     flameOn = false;
@@ -79,7 +79,7 @@ window.draw = function () {
 
   drawCandle();
 
-  // 연기
+  // 연기 이펙트
   if (!flameOn && hasBlown) {
     for (let i = smokeParticles.length - 1; i >= 0; i--) {
       smokeParticles[i].update();
@@ -91,7 +91,7 @@ window.draw = function () {
     }
   }
 
-  // 메시지 타이핑
+  // 메시지 타이핑 효과
   if (typing && charIndex < typedMsg.length && frameCount % 4 === 0) {
     messageElement.innerText += typedMsg[charIndex++];
   }
@@ -107,6 +107,7 @@ function drawBirthdayHat(vidX, vidY, vidW, vidH) {
   // 캔버스 기준, 반전 보정
   const hatX = vidX + (vidW - eyeX);
   const hatY = vidY + eyeY - 100;
+
   push();
   noStroke();
   fill('#ff5d8f');
@@ -117,8 +118,8 @@ function drawBirthdayHat(vidX, vidY, vidW, vidH) {
 }
 
 function drawCandle() {
-  // 초대
   noStroke();
+  // 촛대
   fill(255, 240, 200);
   rect(width / 2 - 15, height / 2 + 40, 30, 80, 10);
   // 심지
@@ -143,8 +144,7 @@ function mouthOpen() {
   const m = detections[0].parts.mouth;
   const d = dist(m[13]._x, m[13]._y, m[19]._x, m[19]._y);
   console.log('mouth distance:', d);
-  return d > 8;
-  // 입 크기 조절하기
+  return d > 8; // 고정 임계값으로 입 벌림 감지
 }
 
 function startMessage(msg) {
