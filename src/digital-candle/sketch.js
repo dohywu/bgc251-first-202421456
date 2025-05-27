@@ -48,18 +48,23 @@ function getFace() {
 }
 
 window.draw = function () {
-  background(0); // 화면 지우기
+  background(0);
 
-  // 영상 보여주기 (불꽃 뒤쪽에)
+  // ▶ 좌우 반전된 영상 출력
   if (video && video.loadedmetadata) {
     let vidW = 240;
     let vidH = 180;
     let vidX = width / 2 - vidW / 2;
-    let vidY = height / 2 - 60 - vidH; // 촛대 위쪽에 위치
-    image(video, vidX, vidY, vidW, vidH);
+    let vidY = height / 2 - 60 - vidH;
+
+    push();
+    translate(vidX + vidW, vidY);
+    scale(-1, 1); // 좌우 반전
+    image(video, 0, 0, vidW, vidH);
+    pop();
   }
 
-  drawCandle(); // 초는 항상 그려
+  drawCandle();
 
   if (flameOn && mouthOpen()) {
     flameOn = false;
@@ -79,7 +84,7 @@ window.draw = function () {
       }
     }
     if (frameCount % 5 === 0) {
-      smokeParticles.push(new Smoke(width / 2, height / 2 - 10));
+      smokeParticles.push(new Smoke(width / 2, height / 2 - 10)); // 촛대 바로 위
     }
   }
 
