@@ -10,9 +10,6 @@ let typing = false;
 let smokeParticles = [];
 
 window.setup = function () {
-  video = createCapture(VIDEO);
-  video.size(320, 240);
-  video.hide();
   createCanvas(windowWidth, windowHeight);
   messageElement = document.getElementById('message');
   inputDiv = document.getElementById('wish-input');
@@ -20,43 +17,45 @@ window.setup = function () {
 };
 
 window.startCandle = function () {
+  // 소원 가져오기
   wishText = document.getElementById('wish').value || '소중한 순간';
   inputDiv.style.display = 'none';
   flameOn = true;
 
-  video = createCapture(VIDEO);
-  video.size(width, height);
-  video.hide();
+  // video는 여기서만 한 번 생성
+  video = createCapture(VIDEO, () => {
+    video.size(240, 180);
+    video.hide();
 
-  const options = {
-    withLandmarks: true,
-    withDescriptors: false,
-    withExpressions: false,
-  };
-
-  faceapi = ml5.faceApi(video, options, () => {
-    console.log('FaceAPI ready');
-    getFace();
+    const options = {
+      withLandmarks: true,
+      withDescriptors: false,
+      withExpressions: false,
+    };
+    faceapi = ml5.faceApi(video, options, () => {
+      console.log('FaceAPI ready');
+      getFace();
+    });
   });
 };
 
 function getFace() {
+  if (!faceapi) return;
   faceapi.detect((err, result) => {
-    detections = result;
+    if (!err && result) detections = result;
     setTimeout(getFace, 100);
   });
 }
 
 window.draw = function () {
-  background('white'); //배경색
+  background('#ffeef4');
 
-  // ▶ 좌우 반전된 영상 출력
+  // 웹캠 출력
+  const vidW = 240,
+    vidH = 180;
+  const vidX = width / 2 - vidW / 2;
+  const vidY = height / 2 - 60 - vidH;
   if (video && video.loadedmetadata) {
-    let vidW = 240;
-    let vidH = 180;
-    let vidX = width / 2 - vidW / 2;
-    let vidY = height / 2 - 60 - vidH;
-
     push();
     translate(vidX + vidW, vidY);
     scale(-1, 1); // 좌우 반전
@@ -64,9 +63,12 @@ window.draw = function () {
     pop();
   }
 
-  drawCandle();
+  // 모자→촛불→입벌림감지 순서
+  drawBirthdayHat(vidX, vidY, vidW, vidH);
 
+  // 입 벌리면 즉시 flameOn 끔
   if (flameOn && mouthOpen()) {
+    console.log('입 벌림 감지됨 — 촛불 끔');
     flameOn = false;
     hasBlown = true;
     setTimeout(() => {
@@ -75,58 +77,74 @@ window.draw = function () {
     }, 500);
   }
 
+  drawCandle();
+
+  // 연기
   if (!flameOn && hasBlown) {
     for (let i = smokeParticles.length - 1; i >= 0; i--) {
       smokeParticles[i].update();
       smokeParticles[i].display();
-      if (smokeParticles[i].isFinished()) {
-        smokeParticles.splice(i, 1);
-      }
+      if (smokeParticles[i].isFinished()) smokeParticles.splice(i, 1);
     }
     if (frameCount % 5 === 0) {
-      smokeParticles.push(new Smoke(width / 2, height / 2 - 10)); // 촛대 바로 위
+      smokeParticles.push(new Smoke(width / 2, height / 2 - 10));
     }
   }
 
-  if (typing) {
-    if (frameCount % 4 === 0 && charIndex < typedMsg.length) {
-      messageElement.innerText += typedMsg[charIndex];
-      charIndex++;
-    }
+  // 메시지 타이핑
+  if (typing && charIndex < typedMsg.length && frameCount % 4 === 0) {
+    messageElement.innerText += typedMsg[charIndex++];
   }
 };
 
+function drawBirthdayHat(vidX, vidY, vidW, vidH) {
+  if (!detections.length) return;
+  const parts = detections[0].parts;
+  const l = parts.leftEye[0],
+    r = parts.rightEye[3];
+  const eyeX = (l._x + r._x) / 2;
+  const eyeY = (l._y + r._y) / 2;
+  // 캔버스 기준, 반전 보정
+  const hatX = vidX + (vidW - eyeX);
+  const hatY = vidY + eyeY - 100;
+  push();
+  noStroke();
+  fill('#ff5d8f');
+  triangle(hatX, hatY, hatX - 25, hatY + 60, hatX + 25, hatY + 60);
+  fill('yellow');
+  ellipse(hatX, hatY - 10, 15);
+  pop();
+}
+
 function drawCandle() {
+  // 초대
   noStroke();
   fill(255, 240, 200);
   rect(width / 2 - 15, height / 2 + 40, 30, 80, 10);
-
+  // 심지
   fill(80);
   rect(width / 2 - 2, height / 2, 4, 40);
-
+  // 불꽃
   if (flameOn) {
     noStroke();
     fill(255, 220, 100, 80);
     ellipse(width / 2, height / 2 - 30 + random(-2, 2), 50, 70);
-
     fill(255, 160, 0, 150);
     ellipse(width / 2, height / 2 - 35 + random(-1.5, 1.5), 35, 55);
-
     fill(255, 90, 0, 200);
     ellipse(width / 2, height / 2 - 42 + random(-1, 1), 20, 30);
-
     fill(255, 255, 255, 180);
     ellipse(width / 2 + random(-2, 2), height / 2 - 50 + random(-2, 2), 6, 10);
   }
 }
 
 function mouthOpen() {
-  if (!detections || detections.length === 0) return false;
-  const mouth = detections[0].parts.mouth;
-  const topLip = mouth[13];
-  const bottomLip = mouth[19];
-  const d = dist(topLip._x, topLip._y, bottomLip._x, bottomLip._y);
-  return d > 25;
+  if (!detections.length) return false;
+  const m = detections[0].parts.mouth;
+  const d = dist(m[13]._x, m[13]._y, m[19]._x, m[19]._y);
+  console.log('mouth distance:', d);
+  return d > 8;
+  // 입 크기 조절하기
 }
 
 function startMessage(msg) {
