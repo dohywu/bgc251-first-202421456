@@ -79,7 +79,7 @@ window.draw = function () {
       }
     }
     if (frameCount % 5 === 0) {
-      smokeParticles.push(new Smoke(width / 2, height / 2 - 60));
+      smokeParticles.push(new Smoke(width / 2, height / 2 - 10));
     }
   }
 
