@@ -28,19 +28,29 @@ window.setup = function () {
   });
 
   // DOM 요소 가져오기
-  messageElement = document.getElementById('message');
-  inputDiv = document.getElementById('wish-input');
-  resetButton = document.getElementById('reset-button');
+  messageElement = select('#message').elt;
+  inputDiv = select('#wish-input').elt;
+  resetButton = select('#reset-button').elt;
 
-  // 사진 촬영 버튼 생성
+  // 사진 촬영 버튼 생성 및 위치 설정 함수 등록
   photoButton = createButton('📸 사진 찍기');
-  photoButton.position(20, 20);
   photoButton.mousePressed(takePhoto);
+  positionPhotoButton();
+  window.addEventListener('resize', positionPhotoButton);
 };
+
+// '다시 켜기' 버튼 아래에 사진 버튼 위치시키기
+function positionPhotoButton() {
+  const resetRect = resetButton.getBoundingClientRect();
+  // 스크롤 오프셋 포함
+  const x = resetRect.left + window.scrollX;
+  const y = resetRect.bottom + window.scrollY + 10; // 10px 여백
+  photoButton.position(x, y);
+}
 
 window.startCandle = function () {
   // 소원 가져오기 및 촛불 On
-  wishText = document.getElementById('wish').value || '소중한 순간';
+  wishText = select('#wish').elt.value || '소중한 순간';
   inputDiv.style.display = 'none';
   flameOn = true;
 };
@@ -80,6 +90,7 @@ window.draw = function () {
     setTimeout(() => {
       startMessage(`✨ "${wishText}"을(를) 위한 불을 껐어요! ✨`);
       resetButton.style.display = 'block';
+      positionPhotoButton(); // reset 후 위치 재조정
     }, 500);
   }
 
@@ -117,7 +128,7 @@ function drawBirthdayHat(vidX, vidY, vidW, vidH) {
   noStroke();
   fill('#ff5d8f');
   triangle(hatX, hatY, hatX - 25, hatY + 60, hatX + 25, hatY + 60);
-  fill('yellow');
+  fill('#ffff66'); // 노란색으로 수정
   ellipse(hatX, hatY - 10, 15);
   pop();
 }
@@ -149,12 +160,11 @@ function mouthOpen() {
   const m = detections[0].parts.mouth;
   const d = dist(m[13]._x, m[13]._y, m[19]._x, m[19]._y);
   console.log('mouth distance:', d);
-  return d > 8; // 고정 임계값으로 입 벌림 감지
+  return d > 8;
 }
 
 // 사진 찍기 함수
 function takePhoto() {
-  // 캔버스 전체를 스냅샷으로 저장
   saveCanvas('snapshot', 'png');
 }
 
@@ -171,7 +181,7 @@ window.resetCandle = function () {
   hasBlown = false;
   messageElement.style.display = 'none';
   resetButton.style.display = 'none';
-  document.getElementById('wish').value = '';
+  select('#wish').elt.value = '';
   inputDiv.style.display = 'block';
   typing = false;
   smokeParticles = [];
