@@ -3,7 +3,7 @@ let detections = [];
 let flameOn = false;
 let wishText = '';
 let hasBlown = false;
-let messageElement, inputDiv, resetButton;
+let messageElement, inputDiv, resetButton, photoButton;
 let typedMsg = '';
 let charIndex = 0;
 let typing = false;
@@ -27,9 +27,15 @@ window.setup = function () {
     getFace();
   });
 
+  // DOM 요소 가져오기
   messageElement = document.getElementById('message');
   inputDiv = document.getElementById('wish-input');
   resetButton = document.getElementById('reset-button');
+
+  // 사진 촬영 버튼 생성
+  photoButton = createButton('📸 사진 찍기');
+  photoButton.position(20, 20);
+  photoButton.mousePressed(takePhoto);
 };
 
 window.startCandle = function () {
@@ -104,7 +110,6 @@ function drawBirthdayHat(vidX, vidY, vidW, vidH) {
     r = parts.rightEye[3];
   const eyeX = (l._x + r._x) / 2;
   const eyeY = (l._y + r._y) / 2;
-  // 캔버스 기준, 반전 보정
   const hatX = vidX + (vidW - eyeX);
   const hatY = vidY + eyeY - 100;
 
@@ -145,6 +150,12 @@ function mouthOpen() {
   const d = dist(m[13]._x, m[13]._y, m[19]._x, m[19]._y);
   console.log('mouth distance:', d);
   return d > 8; // 고정 임계값으로 입 벌림 감지
+}
+
+// 사진 찍기 함수
+function takePhoto() {
+  // 캔버스 전체를 스냅샷으로 저장
+  saveCanvas('snapshot', 'png');
 }
 
 function startMessage(msg) {
