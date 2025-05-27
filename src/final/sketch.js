@@ -1,7 +1,17 @@
 function setup() {
-  createCanvas(400, 400);
+  createCanvas(windowWidth, windowHeight);
+  angleMode(DEGREES);
+  colorMode(HSB, 360, 100, 100, 100);
+  noCursor(); // 커서 숨김
 }
 
 function draw() {
-  background(220);
+  drawClockBackground();
+  drawHourHalo();
+  drawMinuteWaves();
+  drawOrbitDots();
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
