@@ -1,18 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dream Generator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main>
+      <div id="overlay"></div>
+    </main>
 
-    <title>Sketch</title>
-
-    <link rel="stylesheet" type="text/css" href="style.css">
-
+    <!-- External Libraries -->
     <script src="libraries/p5.min.js"></script>
     <script src="libraries/p5.sound.min.js"></script>
-  </head>
+    <script src="libraries/ml5.min.js"></script>
 
-  <body>
-    <script src="sketch.js"></script>
+    <!-- Input Handlers -->
+    <script type="module" src="inputHandlers/emotionInput.js"></script>
+    <script type="module" src="inputHandlers/audioInput.js"></script>
+    <script type="module" src="inputHandlers/pointerInput.js"></script>
+
+    <!-- Core Engine -->
+    <script type="module" src="engine/colorScheme.js"></script>
+    <script type="module" src="engine/particleEngine.js"></script>
+    <script type="module" src="engine/dreamGenerator.js"></script>
+
+    <!-- UI / Control -->
+    <script type="module" src="ui/overlay.js"></script>
+    <script type="module" src="ui/saveMemory.js"></script>
+
+    <!-- Main Sketch -->
+    <script type="module" src="sketch.js"></script>
   </body>
 </html>
