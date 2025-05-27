@@ -16,7 +16,8 @@
 
       #message,
       #wish-input,
-      #reset-button {
+      #reset-button,
+      #instruction {
         position: absolute;
         left: 50%;
         transform: translateX(-50%);
@@ -30,7 +31,7 @@
       #wish-input label {
         display: block;
         font-size: 1.2em;
-        margin-bottom: 16px; /* 간격 조절 */
+        margin-bottom: 16px;
         color: #ff6f91;
       }
 
@@ -43,7 +44,7 @@
         background-color: #fff0f5;
         outline: none;
         display: block;
-        margin-bottom: 20px; /* 또는 원하는 간격(px) */
+        margin-bottom: 20px;
       }
 
       #wish-input button {
@@ -60,6 +61,13 @@
 
       #wish-input button:hover {
         background-color: #ff91b3;
+      }
+
+      #instruction {
+        top: calc(50.5vh - 240px - 30px);
+        font-size: 1em;
+        color: #121212;
+        pointer-events: none;
       }
 
       #message {
@@ -113,6 +121,7 @@
         <button onclick="startCandle()">🔥 불 붙이기</button>
       </div>
 
+      <div id="instruction">입을 벌려 촛불을 꺼보세요</div>
       <div id="message"></div>
       <button id="reset-button" onclick="resetCandle()">다시 켜기</button>
     </main>

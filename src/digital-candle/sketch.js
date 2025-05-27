@@ -80,7 +80,7 @@ function changeColor(dir) {
 }
 
 window.startCandle = function () {
-  wishText = select('#wish').elt.value || '소중한 순간';
+  wishText = select('#wish').elt.value || '12월 11일 현우 생일';
   inputDiv.style.display = 'none';
   flameOn = true;
 };
