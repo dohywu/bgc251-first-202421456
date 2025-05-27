@@ -8,6 +8,7 @@ let typedMsg = '';
 let charIndex = 0;
 let typing = false;
 let smokeParticles = [];
+let fireworks = []; // 폭죽 배열
 
 window.setup = function () {
   createCanvas(windowWidth, windowHeight);
@@ -32,19 +33,18 @@ window.setup = function () {
   inputDiv = select('#wish-input').elt;
   resetButton = select('#reset-button').elt;
 
-  // 사진 촬영 버튼 생성 및 위치 설정 함수 등록
+  // 사진 촬영 버튼 생성 및 위치 설정
   photoButton = createButton('📸 사진 찍기');
   photoButton.mousePressed(takePhoto);
   positionPhotoButton();
   window.addEventListener('resize', positionPhotoButton);
 };
 
-// '다시 켜기' 버튼 아래에 사진 버튼 위치시키기
+// '다시 켜기' 버튼 아래에 사진 버튼 위치
 function positionPhotoButton() {
-  const resetRect = resetButton.getBoundingClientRect();
-  // 스크롤 오프셋 포함
-  const x = resetRect.left + window.scrollX;
-  const y = resetRect.bottom + window.scrollY + 10; // 10px 여백
+  const rect = resetButton.getBoundingClientRect();
+  const x = rect.left + window.scrollX;
+  const y = rect.bottom + window.scrollY + 10;
   photoButton.position(x, y);
 }
 
@@ -81,16 +81,21 @@ window.draw = function () {
     pop();
   }
 
-  // 모자 → 입 벌림 감지 순서
+  // 모자 → 입 벌림 감지
   drawBirthdayHat(vidX, vidY, vidW, vidH);
   if (flameOn && mouthOpen()) {
     console.log('입 벌림 감지됨 — 촛불 끔');
     flameOn = false;
     hasBlown = true;
+    // 폭죽 발사
+    const fx = width / 2;
+    const fy = height / 2 - 30;
+    fireworks.push(new Firework(fx, fy));
+
     setTimeout(() => {
       startMessage(`✨ "${wishText}"을(를) 위한 불을 껐어요! ✨`);
       resetButton.style.display = 'block';
-      positionPhotoButton(); // reset 후 위치 재조정
+      positionPhotoButton();
     }, 500);
   }
 
@@ -103,9 +108,15 @@ window.draw = function () {
       smokeParticles[i].display();
       if (smokeParticles[i].isFinished()) smokeParticles.splice(i, 1);
     }
-    if (frameCount % 5 === 0) {
+    if (frameCount % 5 === 0)
       smokeParticles.push(new Smoke(width / 2, height / 2 - 10));
-    }
+  }
+
+  // 폭죽 업데이트 및 표시
+  for (let i = fireworks.length - 1; i >= 0; i--) {
+    fireworks[i].update();
+    fireworks[i].show();
+    if (fireworks[i].done()) fireworks.splice(i, 1);
   }
 
   // 메시지 타이핑 효과
@@ -128,20 +139,17 @@ function drawBirthdayHat(vidX, vidY, vidW, vidH) {
   noStroke();
   fill('#ff5d8f');
   triangle(hatX, hatY, hatX - 25, hatY + 60, hatX + 25, hatY + 60);
-  fill('#ffff66'); // 노란색으로 수정
+  fill('#ffff66');
   ellipse(hatX, hatY - 10, 15);
   pop();
 }
 
 function drawCandle() {
   noStroke();
-  // 촛대
   fill(255, 240, 200);
   rect(width / 2 - 15, height / 2 + 40, 30, 80, 10);
-  // 심지
   fill(80);
   rect(width / 2 - 2, height / 2, 4, 40);
-  // 불꽃
   if (flameOn) {
     noStroke();
     fill(255, 220, 100, 80);
@@ -159,11 +167,10 @@ function mouthOpen() {
   if (!detections.length) return false;
   const m = detections[0].parts.mouth;
   const d = dist(m[13]._x, m[13]._y, m[19]._x, m[19]._y);
-  console.log('mouth distance:', d);
   return d > 8;
 }
 
-// 사진 찍기 함수
+// 사진 찍기
 function takePhoto() {
   saveCanvas('snapshot', 'png');
 }
@@ -187,6 +194,7 @@ window.resetCandle = function () {
   smokeParticles = [];
 };
 
+// 연기
 class Smoke {
   constructor(x, y) {
     this.x = x + random(-5, 5);
@@ -206,5 +214,56 @@ class Smoke {
   }
   isFinished() {
     return this.alpha <= 0;
+  }
+}
+
+// 폭죽 파티클 클래스
+class Particle {
+  constructor(x, y, color) {
+    this.pos = createVector(x, y);
+    const angle = random(TWO_PI);
+    const speed = random(3, 8);
+    this.vel = p5.Vector.fromAngle(angle).mult(speed);
+    this.acc = createVector(0, 0.1);
+    this.lifespan = 255;
+    this.color = color;
+    this.size = random(6, 12);
+  }
+  update() {
+    this.vel.add(this.acc);
+    this.pos.add(this.vel);
+    this.lifespan -= 4;
+  }
+  show() {
+    noStroke();
+    fill(
+      this.color.levels[0],
+      this.color.levels[1],
+      this.color.levels[2],
+      this.lifespan
+    );
+    ellipse(this.pos.x, this.pos.y, this.size);
+  }
+  done() {
+    return this.lifespan <= 0;
+  }
+}
+
+// 폭죽 클래스
+class Firework {
+  constructor(x, y) {
+    this.particles = [];
+    this.color = color(random(255), random(255), random(255));
+    for (let i = 0; i < 200; i++)
+      this.particles.push(new Particle(x, y, this.color));
+  }
+  update() {
+    for (let p of this.particles) p.update();
+  }
+  show() {
+    for (let p of this.particles) p.show();
+  }
+  done() {
+    return this.particles.every((p) => p.done());
   }
 }
