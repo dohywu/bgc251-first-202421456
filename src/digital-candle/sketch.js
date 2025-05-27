@@ -48,7 +48,7 @@ function getFace() {
 }
 
 window.draw = function () {
-  background(0);
+  background('white'); //배경색
 
   // ▶ 좌우 반전된 영상 출력
   if (video && video.loadedmetadata) {
