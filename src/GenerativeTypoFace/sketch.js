@@ -1,7 +1,7 @@
 let video;
 let faceapi;
 let detections = [];
-let faceBoxCanvas = null; // 캔버스 상에 매핑된 얼굴 박스
+let faceBoxCanvas = null; // 캔버스 상에 매핑된 얼굴 박스. 얼굴이랑 카메라랑 다르니까..
 let words = [];
 let particles = [];
 let baseWords = [];
@@ -19,6 +19,7 @@ function setup() {
     withExpressions: false,
     withDescriptors: false,
   };
+
   faceapi = ml5.faceApi(video, faceOptions, modelReady);
 
   // 텍스트 입력 이벤트
@@ -41,7 +42,9 @@ function modelReady() {
 }
 
 function gotResults(err, result) {
-  if (!err && result) {
+  if (err) {
+    console.log('얼굴 인식 중 에러 발생:', err);
+  } else {
     detections = result;
   }
   faceapi.detect(gotResults);
@@ -123,11 +126,11 @@ function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
 
-// Word 클래스: 이동, faceBoxCanvas 충돌 시 페이드아웃+파티클
+// Word 클래스: 이동, faceBoxCanvas 충돌 시 (얼굴이 텍스트에 부딪혔을때) 페이드아웃+파티클
 class Word {
   constructor(txt, x, y) {
     this.txt = txt;
-    this.pos = createVector(x, y);
+    this.position = createVector(x, y);
     this.vel = createVector(-2 - random(2), 0);
     this.alpha = 255; // 투명도
     this.fading = false; // 페이드 모드 플래그
@@ -135,8 +138,8 @@ class Word {
 
   // 단어 초기 상태로 리셋
   reset() {
-    this.pos.x = random(width, width * 2);
-    this.pos.y = random(50, height - 50);
+    this.position.x = random(width, width * 2);
+    this.position.y = random(50, height - 50);
     this.vel = createVector(-2 - random(2), 0);
     this.alpha = 255;
     this.fading = false;
@@ -153,8 +156,8 @@ class Word {
     }
 
     // 평상시 이동
-    this.pos.add(this.vel);
-    if (this.pos.x < -textWidth(this.txt)) {
+    this.position.add(this.vel);
+    if (this.position.x < -textWidth(this.txt)) {
       this.reset();
       return;
     }
@@ -163,14 +166,14 @@ class Word {
     if (faceBoxCanvas) {
       const f = faceBoxCanvas;
       if (
-        this.pos.x > f.x &&
-        this.pos.x < f.x + f.w &&
-        this.pos.y > f.y &&
-        this.pos.y < f.y + f.h
+        this.position.x > f.x &&
+        this.position.x < f.x + f.w &&
+        this.position.y > f.y &&
+        this.position.y < f.y + f.h
       ) {
         this.fading = true;
         for (let i = 0; i < 10; i++) {
-          particles.push(new Particle(this.pos.x, this.pos.y));
+          particles.push(new Particle(this.position.x, this.position.y));
         }
         return;
       }
@@ -181,27 +184,27 @@ class Word {
     noStroke();
     fill(255, this.alpha);
     textSize(32);
-    text(this.txt, this.pos.x, this.pos.y);
+    text(this.txt, this.position.x, this.position.y);
   }
 }
 
 // Particle 클래스: 흩어짐 + 페이드아웃
 class Particle {
   constructor(x, y) {
-    this.pos = createVector(x, y);
+    this.position = createVector(x, y);
     this.vel = p5.Vector.random2D().mult(random(1, 4));
     this.lifespan = 255;
   }
 
   update() {
-    this.pos.add(this.vel);
+    this.position.add(this.vel);
     this.lifespan -= 4;
   }
 
   display() {
     noStroke();
     fill(255, this.lifespan);
-    ellipse(this.pos.x, this.pos.y, 8);
+    ellipse(this.position.x, this.position.y, 8);
   }
 
   isDead() {
