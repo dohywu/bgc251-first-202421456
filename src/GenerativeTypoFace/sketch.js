@@ -27,7 +27,7 @@ function setup() {
     if (e.key === 'Enter') {
       e.preventDefault();
       const raw = inp.value.trim();
-      baseWords = raw.match(/[\w가-힣]+/g) || [];
+      baseWords = raw.match(/[A-Za-z]+/g) || [];
       console.log('parsed words:', baseWords);
       if (baseWords.length > 0) initWords();
       inp.value = '';
@@ -74,11 +74,13 @@ function draw() {
   let sx, sy, sW, sH;
 
   if (canvasAspect > videoAspect) {
+    // 캔버스가 더 넓으면 세로 기준 크롭
     sW = vw;
     sH = vw / canvasAspect;
     sx = 0;
     sy = (vh - sH) / 2;
   } else {
+    // 캔버스가 더 좁으면 가로 기준 크롭
     sH = vh;
     sW = vh * canvasAspect;
     sy = 0;
@@ -101,6 +103,7 @@ function draw() {
     faceBoxCanvas = null;
   }
 
+  // 크롭된 비디오 그리기
   image(video, 0, 0, cw, ch, sx, sy, sW, sH);
   pop();
 
@@ -120,21 +123,43 @@ function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
 
-// Word 클래스: 이동, faceBoxCanvas 충돌 시 왜곡+파티클
+// Word 클래스: 이동, faceBoxCanvas 충돌 시 페이드아웃+파티클
 class Word {
   constructor(txt, x, y) {
     this.txt = txt;
     this.pos = createVector(x, y);
     this.vel = createVector(-2 - random(2), 0);
+    this.alpha = 255; // 투명도
+    this.fading = false; // 페이드 모드 플래그
+  }
+
+  // 단어 초기 상태로 리셋
+  reset() {
+    this.pos.x = random(width, width * 2);
+    this.pos.y = random(50, height - 50);
+    this.vel = createVector(-2 - random(2), 0);
+    this.alpha = 255;
+    this.fading = false;
   }
 
   update() {
-    this.pos.add(this.vel);
-    if (this.pos.x < -textWidth(this.txt)) {
-      this.pos.x = random(width, width * 2);
-      this.pos.y = random(50, height - 50);
+    // 페이드 모드: 투명도 감소 후 완전 사라지면 리셋
+    if (this.fading) {
+      this.alpha -= 5;
+      if (this.alpha <= 0) {
+        this.reset();
+      }
+      return;
     }
 
+    // 평상시 이동
+    this.pos.add(this.vel);
+    if (this.pos.x < -textWidth(this.txt)) {
+      this.reset();
+      return;
+    }
+
+    // 얼굴 충돌 체크 → 페이드 모드 전환 + 파티클 생성
     if (faceBoxCanvas) {
       const f = faceBoxCanvas;
       if (
@@ -143,18 +168,8 @@ class Word {
         this.pos.y > f.y &&
         this.pos.y < f.y + f.h
       ) {
-        // 왜곡 렌더
-        push();
-        translate(this.pos.x, this.pos.y);
-        rotate(sin(frameCount * 0.3) * 0.5);
-        scale(1 + sin(frameCount * 0.2) * 0.2);
-        textSize(32);
-        noStroke();
-        fill(255);
-        text(this.txt, 0, 0);
-        pop();
-        // 파티클 생성
-        for (let i = 0; i < 3; i++) {
+        this.fading = true;
+        for (let i = 0; i < 10; i++) {
           particles.push(new Particle(this.pos.x, this.pos.y));
         }
         return;
@@ -164,7 +179,7 @@ class Word {
 
   display() {
     noStroke();
-    fill(255);
+    fill(255, this.alpha);
     textSize(32);
     text(this.txt, this.pos.x, this.pos.y);
   }
