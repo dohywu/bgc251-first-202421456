@@ -1,213 +1,170 @@
 let video;
 let faceapi;
 let detections = [];
-let faceBoxCanvas = null; // 캔버스 상에 매핑된 얼굴 박스. 얼굴이랑 카메라랑 다르니까..
+let baseWords = [];
 let words = [];
 let particles = [];
-let baseWords = [];
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
-  // 카메라 세팅: 원본 해상도로 캡쳐
   video = createCapture(VIDEO);
+  video.size(windowWidth, windowHeight);
   video.hide();
 
-  // ml5 face-api 초기화 (구버전 ml5 사용 가정)
-  const faceOptions = {
-    withLandmarks: true,
-    withExpressions: false,
-    withDescriptors: false,
-  };
+  faceapi = ml5.faceApi(video, { withLandmarks: true }, () => {
+    faceapi.detect(gotResults);
+  });
 
-  faceapi = ml5.faceApi(video, faceOptions, modelReady);
+  let inp = document.getElementById('textInput');
 
-  // 텍스트 입력 이벤트
-  const inp = document.getElementById('textInput');
-  inp.addEventListener('keydown', (e) => {
+  //영문,공백만 허용
+  inp.addEventListener('input', function () {
+    this.value = this.value.replace(/[^A-Za-z\s]/g, '');
+  });
+
+  //엔터 누르면 단어 움직이기 시작
+  inp.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
-      e.preventDefault();
-      const raw = inp.value.trim();
-      baseWords = raw.match(/[A-Za-z]+/g) || [];
-      console.log('parsed words:', baseWords);
-      if (baseWords.length > 0) initWords();
-      inp.value = '';
+      let text = this.value.trim();
+      let arr = text.match(/[A-Za-z]+/g);
+      if (arr) {
+        baseWords = arr;
+        initWords();
+      }
+      this.value = '';
     }
   });
+
+  textAlign(LEFT, TOP);
+  textSize(32);
+  fill(255);
 }
 
-function modelReady() {
-  console.log('FaceAPI 모델 로드 완료');
-  faceapi.detect(gotResults);
-}
-
+//얼굴 인식 결과 처리
 function gotResults(err, result) {
-  if (err) {
-    console.log('얼굴 인식 중 에러 발생:', err);
-  } else {
+  if (!err) {
     detections = result;
   }
   faceapi.detect(gotResults);
 }
 
+//words 즉 w에 들어갈 리스트틀
 function initWords() {
   words = [];
   for (let i = 0; i < 30; i++) {
-    const txt = random(baseWords);
-    const y = random(50, height - 50);
-    words.push(new Word(txt, random(width, width * 2), y));
+    words.push({
+      text: random(baseWords),
+      x: random(width, width * 2),
+      y: random(50, height - 50),
+      speed: random(2, 4),
+      alpha: 255,
+      fading: false,
+    });
   }
 }
 
 function draw() {
   background(30);
+  tint(100);
 
-  // 1) 영상 중앙 크롭 + 캔버스 전체로 그리기
+  // 비디오를 중앙에 맞춰 그리기
+  let CanvasWH = width / height;
+  let VideoWH = video.width / video.height;
+  let newW, newH;
+  if (CanvasWH > VideoWH) {
+    newW = width;
+    newH = newW / VideoWH;
+  } else {
+    newH = height;
+    newW = newH * VideoWH;
+  }
+  let x0 = (width - newW) / 2;
+  let y0 = (height - newH) / 2;
   push();
   translate(width, 0);
   scale(-1, 1);
-  tint(100);
-
-  const vw = video.width;
-  const vh = video.height;
-  const cw = width;
-  const ch = height;
-  const videoAspect = vw / vh;
-  const canvasAspect = cw / ch;
-  let sx, sy, sW, sH;
-
-  if (canvasAspect > videoAspect) {
-    // 캔버스가 더 넓으면 세로 기준 크롭
-    sW = vw;
-    sH = vw / canvasAspect;
-    sx = 0;
-    sy = (vh - sH) / 2;
-  } else {
-    // 캔버스가 더 좁으면 가로 기준 크롭
-    sH = vh;
-    sW = vh * canvasAspect;
-    sy = 0;
-    sx = (vw - sW) / 2;
-  }
-
-  // 얼굴 박스 캔버스 좌표로 변환
-  if (detections.length > 0) {
-    const b = detections[0].alignedRect._box;
-    const scaleX = cw / sW;
-    const scaleY = ch / sH;
-    const xRel = b._x - sx;
-    const yRel = b._y - sy;
-    const wCan = b._width * scaleX;
-    const hCan = b._height * scaleY;
-    const xCan = width - (xRel * scaleX + wCan);
-    const yCan = yRel * scaleY;
-    faceBoxCanvas = { x: xCan, y: yCan, w: wCan, h: hCan };
-  } else {
-    faceBoxCanvas = null;
-  }
-
-  // 크롭된 비디오 그리기
-  image(video, 0, 0, cw, ch, sx, sy, sW, sH);
+  image(video, x0, y0, newW, newH);
   pop();
 
-  // 2) 단어 & 파티클 업데이트·렌더링
-  for (let w of words) {
-    w.update();
-    w.display();
+  // 얼굴 박스
+  let boxX, boxY, boxW, boxH;
+  if (detections.length > 0) {
+    let box = detections[0].alignedRect.box;
+    let scaleX = newW / video.width;
+    let scaleY = newH / video.height;
+    let bx = box.x * scaleX;
+    let by = box.y * scaleY;
+    boxW = box.width * scaleX;
+    boxH = box.height * scaleY;
+    boxX = x0 + newW - (bx + boxW); // 좌우 반전된 x 좌표
+    boxY = y0 + by;
+
+    noFill();
+    stroke(255, 0, 0);
+    rect(boxX, boxY, boxW, boxH);
+    noStroke();
   }
+
+  // 단어 업데이트 & 렌더링
+  for (let i = words.length - 1; i >= 0; i--) {
+    let w = words[i];
+
+    // 페이드 모드
+    if (w.fading) {
+      w.alpha -= 5;
+      if (w.alpha <= 0) {
+        words.splice(i, 1);
+        continue;
+      }
+    } else {
+      w.x -= w.speed;
+    }
+
+    fill(255, w.alpha);
+    text(w.text, w.x, w.y);
+
+    // 화면 밖으로 벗어나면 제거
+    if (w.x < 0) {
+      words.splice(i, 1);
+      continue;
+    }
+
+    // 얼굴 충돌 시 페이드 & 파티클 생성
+    let inFaceBox =
+      detections.length > 0 &&
+      w.x > boxX &&
+      w.x < boxX + boxW &&
+      w.y > boxY &&
+      w.y < boxY + boxH;
+
+    if (!w.fading && inFaceBox) {
+      w.fading = true;
+      for (let j = 0; j < 5; j++) {
+        particles.push({
+          x: w.x,
+          y: w.y,
+          vx: random(-3, 3),
+          vy: random(-3, 3),
+          life: 255,
+        });
+      }
+    }
+  }
+
+  // 파티클 업데이트 & 렌더링
   for (let i = particles.length - 1; i >= 0; i--) {
-    particles[i].update();
-    particles[i].display();
-    if (particles[i].isDead()) particles.splice(i, 1);
+    let p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= 5;
+    fill(255, p.life);
+    noStroke();
+    ellipse(p.x, p.y, 8);
+    if (p.life <= 0) particles.splice(i, 1);
   }
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-}
-
-// Word 클래스: 이동, faceBoxCanvas 충돌 시 (얼굴이 텍스트에 부딪혔을때) 페이드아웃+파티클
-class Word {
-  constructor(txt, x, y) {
-    this.txt = txt;
-    this.position = createVector(x, y);
-    this.vel = createVector(-2 - random(2), 0);
-    this.alpha = 255; // 투명도
-    this.fading = false; // 페이드 모드 플래그
-  }
-
-  // 단어 초기 상태로 리셋
-  reset() {
-    this.position.x = random(width, width * 2);
-    this.position.y = random(50, height - 50);
-    this.vel = createVector(-2 - random(2), 0);
-    this.alpha = 255;
-    this.fading = false;
-  }
-
-  update() {
-    // 페이드 모드: 투명도 감소 후 완전 사라지면 리셋
-    if (this.fading) {
-      this.alpha -= 5;
-      if (this.alpha <= 0) {
-        this.reset();
-      }
-      return;
-    }
-
-    // 평상시 이동
-    this.position.add(this.vel);
-    if (this.position.x < -textWidth(this.txt)) {
-      this.reset();
-      return;
-    }
-
-    // 얼굴 충돌 체크 → 페이드 모드 전환 + 파티클 생성
-    if (faceBoxCanvas) {
-      const f = faceBoxCanvas;
-      if (
-        this.position.x > f.x &&
-        this.position.x < f.x + f.w &&
-        this.position.y > f.y &&
-        this.position.y < f.y + f.h
-      ) {
-        this.fading = true;
-        for (let i = 0; i < 10; i++) {
-          particles.push(new Particle(this.position.x, this.position.y));
-        }
-        return;
-      }
-    }
-  }
-
-  display() {
-    noStroke();
-    fill(255, this.alpha);
-    textSize(32);
-    text(this.txt, this.position.x, this.position.y);
-  }
-}
-
-// Particle 클래스: 흩어짐 + 페이드아웃
-class Particle {
-  constructor(x, y) {
-    this.position = createVector(x, y);
-    this.vel = p5.Vector.random2D().mult(random(1, 4));
-    this.lifespan = 255;
-  }
-
-  update() {
-    this.position.add(this.vel);
-    this.lifespan -= 4;
-  }
-
-  display() {
-    noStroke();
-    fill(255, this.lifespan);
-    ellipse(this.position.x, this.position.y, 8);
-  }
-
-  isDead() {
-    return this.lifespan <= 0;
-  }
 }

@@ -5,47 +5,26 @@
     <title>Generative Typographic Art</title>
   </head>
   <body>
-    <div
-      style="
-        position: absolute;
-        top: 50px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 80%;
-        display: flex;
-        gap: 8px;
-      "
-    >
+    <div style="margin: 50px auto; width: 80%; display: flex; gap: 8px">
       <input
         type="text"
         id="textInput"
-        placeholder="영문으로 텍스트를 입력하고 Enter"
+        placeholder="영문으로 텍스트를 입력하고 Enter를 누르세요"
         style="flex: 1; padding: 8px"
+        onkeydown="if(event.key === 'Enter') handleSubmit()"
       />
-      <button id="submitBtn" style="padding: 8px">Enter</button>
-      <script>
-        // 영문(A–Z, a–z)과 공백만 허용하고 나머지는 제거
-        document.getElementById('textInput').addEventListener('input', (e) => {
-          e.target.value = e.target.value.replace(/[^A-Za-z\s]/g, '');
-        });
-      </script>
     </div>
+
+    <!-- 영어랑 공백만 입력가능하게 하는 스크립트 -->
+    <script>
+      const input = document.getElementById('textInput');
+      input.oninput = function () {
+        this.value = this.value.replace(/[^A-Za-z\s]/g, '');
+      };
+    </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
     <script src="https://unpkg.com/ml5@0.4.3/dist/ml5.min.js"></script>
     <script src="sketch.js"></script>
-
-    <!-- 버튼 클릭 시 Enter 처리 트리거 -->
-    <script>
-      window.addEventListener('load', () => {
-        const inp = document.getElementById('textInput');
-        const btn = document.getElementById('submitBtn');
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          // 기존 Enter 키 처리 로직이 붙어 있는 keydown 핸들러 강제 호출
-          inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-        });
-      });
-    </script>
   </body>
 </html>
