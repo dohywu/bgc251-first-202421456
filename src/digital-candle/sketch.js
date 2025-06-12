@@ -13,16 +13,13 @@ let typedMsg = '';
 let charIndex = 0;
 let typing = false;
 let smokeParticles = [];
-let fireworks = []; // 폭죽 배열
+let fireworks = [];
 
 // 촛불 커스터마이징 옵션
-const candleColors = ['#FFDDAA', '#A8E6CF', '#D0E1FF', '#FFE6A4', '#FFC0CB'];
-let currentColorIndex = 0;
 
 window.setup = function () {
   createCanvas(windowWidth, windowHeight);
 
-  // 비디오 스트림 및 FaceAPI 초기화
   video = createCapture(VIDEO);
   video.size(240, 180);
   video.hide();
@@ -54,7 +51,6 @@ window.setup = function () {
   window.addEventListener('resize', positionColorButtons);
 };
 
-// 버튼 위치 재조정: '다시 켜기' 아래 사진 버튼
 function positionPhotoButton() {
   const rect = resetButton.getBoundingClientRect();
   photoButton.position(
@@ -63,12 +59,9 @@ function positionPhotoButton() {
   );
 }
 
-// 버튼 위치: 화면 왼쪽 상단에 커스터마이징 버튼
-// 버튼 위치: 촛대(캔들) 바로 아래에 색상 변경 버튼 배치
 function positionColorButtons() {
-  // 캔들 위치 계산: 캔들 top-left (width/2-15, height/2+40), 높이 80
-  const x = width / 2 - 30; // ◀ 버튼 x 좌표
-  const y = height / 2 + 40 + 80 + 10; // 캔들 하단에서 10px 여백
+  const x = width / 2 - 30;
+  const y = height / 2 + 40 + 80 + 10;
   prevColorBtn.position(x, y);
   nextColorBtn.position(x + 40, y);
 }
@@ -80,7 +73,7 @@ function changeColor(dir) {
 }
 
 window.startCandle = function () {
-  wishText = select('#wish').elt.value || '12월 11일 현우 생일';
+  wishText = select('#wish').elt.value;
   inputDiv.style.display = 'none';
   flameOn = true;
 };
@@ -124,7 +117,7 @@ window.draw = function () {
 
   drawCandle();
 
-  // 연기
+  //연기 파티클
   if (!flameOn && hasBlown) {
     smokeParticles.forEach((s, i) => {
       s.update();
@@ -135,14 +128,14 @@ window.draw = function () {
       smokeParticles.push(new Smoke(width / 2, height / 2 - 10));
   }
 
-  // 폭죽
+  //폭죽 터지는 파티클
   fireworks.forEach((fw, i) => {
     fw.update();
     fw.show();
     if (fw.done()) fireworks.splice(i, 1);
   });
 
-  // 메시지 타이핑
+  //메시지 타이핑
   if (typing && charIndex < typedMsg.length && frameCount % 4 === 0)
     messageElement.innerText += typedMsg[charIndex++];
 };
@@ -161,6 +154,9 @@ function drawBirthdayHat(x, y, w, h) {
   ellipse(ex, ey - 10, 15);
   pop();
 }
+
+const candleColors = ['#FFDDAA', '#A8E6CF', '#D0E1FF', '#FFE6A4', '#FFC0CB'];
+let currentColorIndex = 0;
 
 function drawCandle() {
   noStroke();

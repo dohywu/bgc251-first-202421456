@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Digital Candle</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #ffe4ec, #e0f7fa);
+        color: #ffd6f7;
+        font-family: 'Pretendard', cursive, sans-serif;
+        overflow: hidden;
+      }
+
+      #message,
+      #wish-input,
+      #instruction {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+      }
+
+      #wish-input {
+        top: 10%;
+      }
+
+      #wish-input label {
+        display: block;
+        font-size: 1.2em;
+        margin-bottom: 16px;
+        color: #ff6f91;
+      }
+
+      #wish-input input {
+        font-size: 1.2em;
+        padding: 10px 15px;
+        width: 280px;
+        border-radius: 12px;
+        border: 2px solid #ffccda;
+        background-color: #fff0f5;
+        outline: none;
+        display: block;
+        margin-bottom: 20px;
+      }
+
+      #wish-input button {
+        font-size: 1.2em;
+        margin-left: 10px;
+        padding: 10px 15px;
+        border: none;
+        background-color: #ffb6c1;
+        color: white;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      #wish-input button:hover {
+        background-color: #ff91b3;
+      }
+
+      #instruction {
+        top: calc(50.5vh - 240px - 30px);
+        font-size: 1em;
+        color: #121212;
+        pointer-events: none;
+      }
+
+      #message {
+        top: 20%;
+        font-size: 2em;
+        display: none;
+        animation: popin 0.6s ease-in-out forwards;
+        color: #ff4081;
+        font-weight: medium;
+      }
+
+      @keyframes popin {
+        0% {
+          transform: translate(-50%, -10%) scale(0.5);
+          opacity: 0;
+        }
+        100% {
+          transform: translate(-50%, 0%) scale(1);
+          opacity: 1;
+        }
+      }
+
+      canvas {
+        display: block;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div id="wish-input">
+        <label>무엇을 위해 촛불을 끄고 싶나요?</label><br />
+        <input type="text" id="wish" placeholder="예: 내 생일" />
+        <button onclick="startCandle()">🔥 불 붙이기</button>
+      </div>
+
+      <div id="instruction">입을 벌려 촛불을 꺼보세요</div>
+      <div id="message"></div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
+    <script src="sketch.js"></script>
+  </body>
+</html>
