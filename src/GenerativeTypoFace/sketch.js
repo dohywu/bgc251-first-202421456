@@ -52,7 +52,7 @@ function gotResults(err, result) {
 //words 즉 w에 들어갈 리스트틀
 function initWords() {
   words = [];
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 60; i++) {
     words.push({
       text: random(baseWords),
       x: random(width, width * 2),
@@ -68,7 +68,7 @@ function draw() {
   background(30);
   tint(100);
 
-  // 비디오를 중앙에 맞춰 그리기
+  //비디오를 중앙에 맞춰 그리기
   let CanvasWH = width / height;
   let VideoWH = video.width / video.height;
   let newW, newH;
@@ -87,7 +87,7 @@ function draw() {
   image(video, x0, y0, newW, newH);
   pop();
 
-  // 얼굴 박스
+  //얼굴 박스
   let boxX, boxY, boxW, boxH;
   if (detections.length > 0) {
     let box = detections[0].alignedRect.box;
@@ -97,18 +97,13 @@ function draw() {
     let by = box.y * scaleY;
     boxW = box.width * scaleX;
     boxH = box.height * scaleY;
-    boxX = x0 + newW - (bx + boxW); // 좌우 반전된 x 좌표
+    boxX = x0 + newW - (bx + boxW);
     boxY = y0 + by;
-
-    noFill();
-    stroke(255, 0, 0);
-    rect(boxX, boxY, boxW, boxH);
-    noStroke();
   }
-  // 단어 업데이트 & 렌더링
+  //단어 업데이트 & 렌더링
   for (let i = words.length - 1; i >= 0; i--) {
     let w = words[i];
-    // 페이드 모드
+    //페이드 모드
     if (w.fading) {
       w.alpha -= 5;
       if (w.alpha <= 0) {
@@ -120,12 +115,12 @@ function draw() {
     }
     fill(255, w.alpha);
     text(w.text, w.x, w.y);
-    // 화면 밖으로 벗어나면 제거
+    //화면 밖으로 벗어나면 제거
     if (w.x < 0) {
       words.splice(i, 1);
       continue;
     }
-    // 얼굴 충돌 시 페이드 & 파티클 생성
+    //얼굴 충돌 시 페이드 & 파티클 생성
     let inFaceBox =
       detections.length > 0 &&
       w.x > boxX &&
@@ -134,7 +129,7 @@ function draw() {
       w.y < boxY + boxH;
     if (!w.fading && inFaceBox) {
       w.fading = true;
-      for (let j = 0; j < 5; j++) {
+      for (let j = 0; j < 10; j++) {
         particles.push({
           x: w.x,
           y: w.y,
@@ -145,7 +140,8 @@ function draw() {
       }
     }
   }
-  // 파티클 업데이트 & 렌더링
+
+  //파티클 업데이트 & 렌더링
   for (let i = particles.length - 1; i >= 0; i--) {
     let p = particles[i];
     p.x += p.vx;
