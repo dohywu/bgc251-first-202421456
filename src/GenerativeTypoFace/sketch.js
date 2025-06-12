@@ -16,23 +16,23 @@ function setup() {
     faceapi.detect(gotResults);
   });
 
-  let inp = document.getElementById('textInput');
+  let inputBox = document.getElementById('textInput');
 
   //영문,공백만 허용
-  inp.addEventListener('input', function () {
-    this.value = this.value.replace(/[^A-Za-z\s]/g, '');
+  inputBox.addEventListener('input', function () {
+    inputBox.value = inputBox.value.replace(/[^A-Za-z\s]/g, '');
   });
 
   //엔터 누르면 단어 움직이기 시작
-  inp.addEventListener('keydown', function (e) {
+  inputBox.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
-      let text = this.value.trim();
-      let arr = text.match(/[A-Za-z]+/g);
-      if (arr) {
-        baseWords = arr;
+      let text = inputBox.value.trim();
+      let wordList = text.match(/[A-Za-z]+/g);
+      if (wordList) {
+        baseWords = wordList;
         initWords();
       }
-      this.value = '';
+      inputBox.value = '';
     }
   });
 
@@ -105,11 +105,9 @@ function draw() {
     rect(boxX, boxY, boxW, boxH);
     noStroke();
   }
-
   // 단어 업데이트 & 렌더링
   for (let i = words.length - 1; i >= 0; i--) {
     let w = words[i];
-
     // 페이드 모드
     if (w.fading) {
       w.alpha -= 5;
@@ -120,16 +118,13 @@ function draw() {
     } else {
       w.x -= w.speed;
     }
-
     fill(255, w.alpha);
     text(w.text, w.x, w.y);
-
     // 화면 밖으로 벗어나면 제거
     if (w.x < 0) {
       words.splice(i, 1);
       continue;
     }
-
     // 얼굴 충돌 시 페이드 & 파티클 생성
     let inFaceBox =
       detections.length > 0 &&
@@ -137,7 +132,6 @@ function draw() {
       w.x < boxX + boxW &&
       w.y > boxY &&
       w.y < boxY + boxH;
-
     if (!w.fading && inFaceBox) {
       w.fading = true;
       for (let j = 0; j < 5; j++) {
@@ -151,7 +145,6 @@ function draw() {
       }
     }
   }
-
   // 파티클 업데이트 & 렌더링
   for (let i = particles.length - 1; i >= 0; i--) {
     let p = particles[i];
@@ -164,7 +157,6 @@ function draw() {
     if (p.life <= 0) particles.splice(i, 1);
   }
 }
-
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
