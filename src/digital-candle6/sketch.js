@@ -59,7 +59,7 @@ function draw() {
   if (flameOn && mouthOpen()) {
     flameOn = false;
     hasBlown = true;
-    messageDiv.html(`"${inputBox.value()}" 을 위한 촛불을 껐어요 🎉`);
+    messageDiv.html(`"${inputBox.value()}" 을(를) 위한 촛불을 껐어요 🎉`);
   }
 
   // 연기 발생
